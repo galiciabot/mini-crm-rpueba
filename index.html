@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini CRM | GaliciaBot</title>
+  <meta name="description" content="Mini CRM conectado a n8n y Odoo" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --border: #e5e7eb;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #0f766e;
+      --primary-2: #14b8a6;
+      --danger: #b91c1c;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.1;
+    }
+
+    .brand p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #ecfeff;
+      color: #155e75;
+      border: 1px solid #bae6fd;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
+      gap: 24px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+
+    .panel-title {
+      margin: 0 0 6px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .panel-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+      flex-wrap: wrap;
+    }
+
+    .search {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+
+    .search input {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 12px;
+      padding: 13px 14px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search input:focus {
+      border-color: var(--primary-2);
+      box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12);
+    }
+
+    .table-wrap {
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 14px 20px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: #fcfdff;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    tbody tr {
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    tbody tr.active {
+      background: #ecfeff;
+    }
+
+    .name-cell {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .status-nuevo {
+      background: #ecfeff;
+      color: #115e59;
+      border-color: #99f6e4;
+    }
+
+    .status-default {
+      background: #f1f5f9;
+      color: #334155;
+      border-color: #e2e8f0;
+    }
+
+    .detail {
+      min-height: 680px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-body {
+      padding: 22px;
+    }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      min-height: 420px;
+      text-align: center;
+      color: var(--muted);
+      padding: 24px;
+    }
+
+    .empty-state-box {
+      max-width: 320px;
+    }
+
+    .avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    .detail-name {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.1;
+    }
+
+    .detail-meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .info-card {
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .info-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .info-value {
+      font-size: 15px;
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    .notes-box {
+      margin-top: 18px;
+      border: 1px dashed #cbd5e1;
+      background: #fcfdff;
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .notes-box p {
+      margin: 0;
+      color: #334155;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .loading,
+    .error-row,
+    .no-results {
+      text-align: center;
+      color: var(--muted);
+      padding: 30px 20px;
+    }
+
+    .error-row {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .detail {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        padding: 14px;
+      }
+
+      .panel-header,
+      .toolbar,
+      tbody td,
+      thead th,
+      .detail-body {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .brand h1 {
+        font-size: 24px;
+      }
+
+      thead th:nth-child(3),
+      tbody td:nth-child(3),
+      thead th:nth-child(5),
+      tbody td:nth-child(5) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Mini CRM</h1>
+        <p>Contactos sincronizados desde n8n + Odoo</p>
+      </div>
+      <div class="pill">Webhook conectado</div>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Contactos</h2>
+          <p class="panel-subtitle">Lista dinámica cargada desde tu webhook</p>
+        </div>
+
+        <div class="toolbar">
+          <div class="search">
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Buscar por nombre, correo, teléfono o mascota..."
+            />
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="contactsTableBody">
+              <tr>
+                <td colspan="5" class="loading">Cargando contactos...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="panel detail">
+        <div class="panel-header">
+          <h2 class="panel-title">Detalle</h2>
+          <p class="panel-subtitle">Información del contacto seleccionado</p>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          <div class="empty-state-box">
+            <h3>Selecciona un contacto</h3>
+            <p>Haz clic sobre una fila de la tabla para ver su información completa.</p>
+          </div>
+        </div>
+
+        <div id="detailView" class="detail-body" style="display:none;">
+          <div id="detailAvatar" class="avatar">C</div>
+          <h3 id="detailName" class="detail-name">Contacto</h3>
+          <div id="detailMeta" class="detail-meta">Sin datos</div>
+
+          <div class="detail-grid">
+            <div class="info-card">
+              <div class="info-label">Correo</div>
+              <div id="detailEmail" class="info-value">-</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-label">Teléfono</div>
+              <div id="detailPhone" class="info-value">-</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-label">Mascota</div>
+              <div id="detailPet" class="info-value">-</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-label">Raza</div>
+              <div id="detailBreed" class="info-value">-</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-label">Estado</div>
+              <div id="detailStatus" class="info-value">-</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-label">Fecha de registro</div>
+              <div id="detailDate" class="info-value">-</div>
+            </div>
+          </div>
+
+          <div class="notes-box">
+            <div class="info-label">Notas</div>
+            <p id="detailNotes">-</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer-note">
+      Fuente de datos: n8n webhook + Odoo
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://n8n-n8n-test.hmrhwx.easypanel.host/webhook/listar-contactos';
+
+    const tableBody = document.getElementById('contactsTableBody');
+    const searchInput = document.getElementById('searchInput');
+
+    const emptyState = document.getElementById('emptyState');
+    const detailView = document.getElementById('detailView');
+
+    const detailAvatar = document.getElementById('detailAvatar');
+    const detailName = document.getElementById('detailName');
+    const detailMeta = document.getElementById('detailMeta');
+    const detailEmail = document.getElementById('detailEmail');
+    const detailPhone = document.getElementById('detailPhone');
+    const detailPet = document.getElementById('detailPet');
+    const detailBreed = document.getElementById('detailBreed');
+    const detailStatus = document.getElementById('detailStatus');
+    const detailDate = document.getElementById('detailDate');
+    const detailNotes = document.getElementById('detailNotes');
+
+    let contacts = [];
+    let filteredContacts = [];
+    let activeId = null;
+
+    function formatDate(value) {
+      if (!value || value === 'Sin fecha') return 'Sin fecha';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+
+    function getStatusClass(status) {
+      if ((status || '').toLowerCase() === 'nuevo') return 'status status-nuevo';
+      return 'status status-default';
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function showDetail(contact) {
+      emptyState.style.display = 'none';
+      detailView.style.display = 'block';
+
+      const initial = (contact.name || '?').trim().charAt(0).toUpperCase() || '?';
+
+      detailAvatar.textContent = initial;
+      detailName.textContent = contact.name || 'Sin nombre';
+      detailMeta.textContent = `ID ${contact.id ?? '-'} · ${contact.email || 'Sin correo'}`;
+      detailEmail.textContent = contact.email || 'Sin correo';
+      detailPhone.textContent = contact.phone || 'Sin teléfono';
+      detailPet.textContent = contact.pet || 'Sin registrar';
+      detailBreed.textContent = contact.breed || 'Sin registrar';
+      detailStatus.textContent = contact.status || 'Sin estado';
+      detailDate.textContent = formatDate(contact.date);
+      detailNotes.textContent = contact.notes || 'Sin notas';
+    }
+
+    function renderTable(rows) {
+      if (!rows.length) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="no-results">No se encontraron contactos.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      tableBody.innerHTML = rows.map(contact => `
+        <tr data-id="${escapeHtml(contact.id)}" class="${contact.id === activeId ? 'active' : ''}">
+          <td class="name-cell">${escapeHtml(contact.name || 'Sin nombre')}</td>
+          <td class="muted">${escapeHtml(contact.email || 'Sin correo')}</td>
+          <td class="muted">${escapeHtml(contact.phone || 'Sin teléfono')}</td>
+          <td><span class="${getStatusClass(contact.status)}">${escapeHtml(contact.status || 'Sin estado')}</span></td>
+          <td class="muted">${escapeHtml(formatDate(contact.date))}</td>
+        </tr>
+      `).join('');
+
+      document.querySelectorAll('#contactsTableBody tr[data-id]').forEach(row => {
+        row.addEventListener('click', () => {
+          const id = Number(row.dataset.id);
+          activeId = id;
+          const selected = contacts.find(c => Number(c.id) === id);
+          renderTable(filteredContacts);
+          if (selected) showDetail(selected);
+        });
+      });
+    }
+
+    function applySearch() {
+      const term = searchInput.value.trim().toLowerCase();
+
+      filteredContacts = contacts.filter(contact => {
+        return [
+          contact.name,
+          contact.email,
+          contact.phone,
+          contact.pet,
+          contact.breed,
+          contact.notes,
+          contact.status
+        ].some(value => String(value || '').toLowerCase().includes(term));
+      });
+
+      renderTable(filteredContacts);
+    }
+
+    async function loadContacts() {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="loading">Cargando contactos...</td>
+        </tr>
+      `;
+
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error('Respuesta no válida del webhook');
+        }
+
+        const data = await response.json();
+        contacts = Array.isArray(data.contacts) ? data.contacts : [];
+        filteredContacts = [...contacts];
+        renderTable(filteredContacts);
+
+        if (contacts.length > 0) {
+          activeId = contacts[0].id;
+          renderTable(filteredContacts);
+          showDetail(contacts[0]);
+        }
+      } catch (error) {
+        console.error(error);
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="error-row">
+              No se pudieron cargar los contactos desde el webhook.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    searchInput.addEventListener('input', applySearch);
+
+    loadContacts();
+  </script>
+</body>
+</html>
